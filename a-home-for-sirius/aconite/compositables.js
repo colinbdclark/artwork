@@ -76,6 +76,7 @@
         
         events: {
             onVideoLoaded: null,
+            onReady: null,
             onVideoEnded: null
         },
         
@@ -100,6 +101,13 @@
         video.addEventListener("canplay", function (e) {
             that.events.onVideoLoaded.fire(video);
         }, true);
+        
+        var once = function (e) {
+            that.events.onReady.fire(that);
+            video.removeEventListener("canplay", once, true);
+        };
+        
+        video.addEventListener("canplay", once, true);
         
         video.addEventListener("ended", function (e) {
             that.events.onVideoEnded.fire(video);

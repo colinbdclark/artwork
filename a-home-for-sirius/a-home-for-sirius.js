@@ -7,7 +7,10 @@
         gradeNames: ["fluid.viewComponent", "autoInit"],
 
         model: {
-            frameCount: 0
+            currentClips: {
+                sirius: 0,
+                light: 0
+            }
         },
         
         components: {
@@ -16,33 +19,39 @@
                 container: "{that}.dom.stage"
             },
             
-            clock: {
-                type: "flock.scheduler.async"
-            },
-            
             sirius: {
                 type: "colin.siriusHome.siriusLayer"
             },
             
             light: {
                 type: "colin.siriusHome.lightLayer",
-            }
-        },
-        
-        invokers: {
-            loadOtherSirius: {
-                funcName: "colin.siriusHome.loadOtherSirius",
-                args: ["{that}.sirius.source", "{that}.options.videoURLs.otherSirius"]
+            },
+            
+            thresholdSynth: {
+                type: "flock.synth",
+                options: {
+                    synthDef: {
+                        id: "thresholdSine",
+                        ugen: "flock.ugen.sin",
+                        freq: 1/30,
+                        mul: 0.01,
+                        add: 0.01,
+                        rate: "frame"
+                    },
+                    audioSettings: {
+                        rate: "frame"
+                    }
+                }
             }
         },
         
         events: {
             onVideosReady: {
                 events: {
-                    siriusLoaded: "{that}.sirius.source.events.onVideoLoaded",
-                    lightLoaded: "{that}.light.source.events.onVideoLoaded"
+                    siriusFirstReady: "{that}.sirius.source.events.onReady",
+                    lightFirstReady: "{that}.light.source.events.onReady"
                 },
-                args: ["{arguments}.siriusLoaded.0", "{arguments}.lightLoaded.0"]
+                args: ["{arguments}.siriusFirstReady.0", "{arguments}.lightFirstReady.0"]
             },
             onStart: null
         },
@@ -54,13 +63,9 @@
                     "{glManager}",
                     "{siriusHome}.sirius",
                     "{siriusHome}.light",
+                    "{siriusHome}.thresholdSynth",
                     "{siriusHome}.events.onStart"
                 ]
-            },
-            
-            onStart: {
-                funcName: "{clock}.schedule",
-                args: ["{that}.options.score"]
             }
         },
         
@@ -74,13 +79,10 @@
             light: "videos/light-720p.m4v"
         },
         
-        score: [
-            {
-                interval: "once",
-                time: 52,
-                change: "{that}.loadOtherSirius"
-            }
-        ]
+        videoSequences: {
+            sirius: ["videos/sirius-720p.m4v", "videos/sirius-chair.m4v"],
+            light: ["videos/light-720p.m4v", "videos/vitamix-720p.mov"]
+        }
     });
     
     fluid.defaults("colin.siriusHome.glManager", {
@@ -129,7 +131,19 @@
         components: {
             source: {
                 options: {
-                    url: "{siriusHome}.options.videoURLs.sirius"
+                    url: "{siriusHome}.options.videoURLs.sirius",
+                    listeners: {
+                        onVideoEnded: {
+                            funcName: "colin.siriusHome.nextVideo",
+                            args: [
+                                "{siriusHome}.model.currentClips", 
+                                "sirius", 
+                                "{siriusHome}.options.videoSequences.sirius", 
+                                "{siriusLayer}.source"
+                            ]
+                        }
+                    }
+
                 }
             }
         },
@@ -147,7 +161,18 @@
         components: {
             source: {
                 options: {
-                    url: "{siriusHome}.options.videoURLs.light"
+                    url: "{siriusHome}.options.videoURLs.light",
+                    listeners: {
+                        onVideoEnded: {
+                            funcName: "colin.siriusHome.nextVideo",
+                            args: [
+                                "{siriusHome}.model.currentClips", 
+                                "light", 
+                                "{siriusHome}.options.videoSequences.light", 
+                                "{lightLayer}.source"
+                            ]
+                        }
+                    }
                 }
             }
         },
@@ -155,9 +180,14 @@
         bindToTextureUnit: "TEXTURE1"
     });
     
-    // TODO: Refactor this.
-    colin.siriusHome.loadOtherSirius = function (source, url) {
-        source.setURL(url);
+    colin.siriusHome.nextVideo = function (model, path, sequence, video) {
+        model[path]++;
+        if (model[path] >= sequence.length) {
+            model[path] = 0;
+        }
+        
+        var url = sequence[model[path]];
+        video.setURL(url);
     };
     
     colin.siriusHome.makeStageVertex = function (gl) {
@@ -169,9 +199,16 @@
         aconite.makeSquareVertexBuffer(gl);  
     };
     
-    colin.siriusHome.drawFrame = function (glManager, sirius, light) {
-        var gl = glManager.gl;
-                        
+    colin.siriusHome.drawFrame = function (glManager, sirius, light, synth) {
+        var gl = glManager.gl,
+            thresholdSineUGen = synth.namedNodes.thresholdSine;
+        
+        thresholdSineUGen.gen(1);
+        var threshold = thresholdSineUGen.output[0];
+        //console.log(threshold);
+        // Set the threshold.
+        gl.uniform1f(glManager.shaderProgram.threshold, threshold);
+        
         sirius.refresh();
         light.refresh();
         
@@ -179,7 +216,7 @@
     };
     
     // TODO: Componentize.
-    colin.siriusHome.scheduleAnimation = function (glManager, sirius, light, onStart) {
+    colin.siriusHome.scheduleAnimation = function (glManager, sirius, light, synth, onStart) {
         // TODO: Refactor
         var gl = glManager.gl,
             shaderProgram = glManager.shaderProgram;
@@ -198,7 +235,7 @@
         
         // TODO: Hold onto a reference to the animator.
         var animator = aconite.animator(function () {
-            colin.siriusHome.drawFrame(glManager, sirius, light);
+            colin.siriusHome.drawFrame(glManager, sirius, light, synth);
         });
         
         onStart.fire();
