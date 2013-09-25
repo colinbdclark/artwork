@@ -12,7 +12,7 @@ void main(void) {
     
     // Y = 0.2126 R + 0.7152 G + 0.0722 B, assuming colours are linear here.
     float luminance = (siriusFrag.r * 0.2126 + siriusFrag.g * 0.7152 + siriusFrag.b * 0.0722);
-    if (luminance > threshold) {
+    if (luminance < 0.002 || luminance > threshold) {
         luminance = 1.0;
     }
     

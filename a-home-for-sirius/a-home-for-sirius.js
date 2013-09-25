@@ -19,6 +19,10 @@
                 container: "{that}.dom.stage"
             },
             
+            clock: {
+                type: "flock.scheduler.async"
+            },
+            
             sirius: {
                 type: "colin.siriusHome.siriusLayer"
             },
@@ -33,9 +37,10 @@
                     synthDef: {
                         id: "thresholdSine",
                         ugen: "flock.ugen.sin",
-                        freq: 1/30,
-                        mul: 0.01,
-                        add: 0.01,
+                        phase: 0,
+                        freq: 1/360,
+                        mul: 0.0025,
+                        add: 0.0025,
                         rate: "frame"
                     },
                     audioSettings: {
@@ -66,6 +71,11 @@
                     "{siriusHome}.thresholdSynth",
                     "{siriusHome}.events.onStart"
                 ]
+            },
+            
+            onStart: {
+                funcName: "{clock}.schedule",
+                args: ["{siriusHome}.options.score"]
             }
         },
         
@@ -73,16 +83,60 @@
             stage: ".stage"
         },
         
-        videoURLs: {
-            sirius: "videos/sirius-720p.m4v",
-            otherSirius: "videos/sirius-chair.m4v",
-            light: "videos/light-720p.m4v"
+        videoSequences: {
+            sirius: [
+                "videos/sirius/dying-plants-sirius-720p.mov",
+                "videos/sirius/sirius-fur-basement-720p.m4v", 
+                "videos/sirius/sirius-fur-basement-720p.m4v#t=23", 
+                "videos/sirius/sirius-chair.m4v"
+            ],
+            light: [
+                "videos/light/window-plant-720p.m4v",
+                "videos/light/blanket-720p.mov"
+            ]
         },
         
-        videoSequences: {
-            sirius: ["videos/sirius-720p.m4v", "videos/sirius-chair.m4v"],
-            light: ["videos/light-720p.m4v", "videos/vitamix-720p.mov"]
-        }
+        score: [
+            {
+                interval: "once",
+                time: 58,
+                change: {
+                    expander: {
+                        funcName: "colin.siriusHome.makeVideoUpdater",
+                        args: [
+                            "{that}.sirius.source",
+                            "{that}.options.videoSequences.sirius.1"
+                        ]
+                    }
+                }
+            },
+            {
+                interval: "once",
+                time: 74,
+                change: {
+                    expander: {
+                        funcName: "colin.siriusHome.makeVideoUpdater",
+                        args: [
+                            "{that}.sirius.source",
+                            "{that}.options.videoSequences.sirius.2"
+                        ]
+                    }
+                }
+            },
+            {
+                interval: "once",
+                time: 90,
+                change: {
+                    expander: {
+                        funcName: "colin.siriusHome.makeVideoUpdater",
+                        args: [
+                            "{that}.sirius.source",
+                            "{that}.options.videoSequences.sirius.3"
+                        ]
+                    }
+                }
+            }
+        ]
     });
     
     fluid.defaults("colin.siriusHome.glManager", {
@@ -131,19 +185,7 @@
         components: {
             source: {
                 options: {
-                    url: "{siriusHome}.options.videoURLs.sirius",
-                    listeners: {
-                        onVideoEnded: {
-                            funcName: "colin.siriusHome.nextVideo",
-                            args: [
-                                "{siriusHome}.model.currentClips", 
-                                "sirius", 
-                                "{siriusHome}.options.videoSequences.sirius", 
-                                "{siriusLayer}.source"
-                            ]
-                        }
-                    }
-
+                    url: "{siriusHome}.options.videoSequences.sirius.0"
                 }
             }
         },
@@ -161,7 +203,7 @@
         components: {
             source: {
                 options: {
-                    url: "{siriusHome}.options.videoURLs.light",
+                    url: "{siriusHome}.options.videoSequences.light.0",
                     listeners: {
                         onVideoEnded: {
                             funcName: "colin.siriusHome.nextVideo",
@@ -179,6 +221,12 @@
         
         bindToTextureUnit: "TEXTURE1"
     });
+    
+    colin.siriusHome.makeVideoUpdater = function (source, url) {
+        return function () {
+            source.setURL(url);
+        };
+    };
     
     colin.siriusHome.nextVideo = function (model, path, sequence, video) {
         model[path]++;
@@ -205,7 +253,7 @@
         
         thresholdSineUGen.gen(1);
         var threshold = thresholdSineUGen.output[0];
-        //console.log(threshold);
+
         // Set the threshold.
         gl.uniform1f(glManager.shaderProgram.threshold, threshold);
         
