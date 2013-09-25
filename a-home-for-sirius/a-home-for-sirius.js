@@ -37,10 +37,10 @@
                     synthDef: {
                         id: "thresholdSine",
                         ugen: "flock.ugen.sin",
-                        phase: 0,
+                        phase: 0.7,
                         freq: 1/360,
-                        mul: 0.0025,
-                        add: 0.0025,
+                        mul: 0.0028,
+                        add: 0.0028,
                         rate: "frame"
                     },
                     audioSettings: {
@@ -85,14 +85,44 @@
         
         videoSequences: {
             sirius: [
-                "videos/sirius/dying-plants-sirius-720p.mov",
-                "videos/sirius/sirius-fur-basement-720p.m4v", 
-                "videos/sirius/sirius-fur-basement-720p.m4v#t=23", 
-                "videos/sirius/sirius-chair.m4v"
+                {
+                    url: "videos/sirius/dying-plants-sirius-720p.mov",
+                    values: {
+                        mul: 0.003,
+                        add: 0.003,
+                        phase: 1.0
+                    }
+                },
+                {
+                    url: "videos/sirius/sirius-fur-basement-720p.m4v",
+                    values: {
+                        mul: 0.0025,
+                        add: 0.0025
+                    }
+                },
+                {
+                    url: "videos/sirius/sirius-fur-basement-720p.m4v#t=23",
+                    values: {
+                        mul: 0.0025,
+                        add: 0.0025
+                    }
+                },
+                {
+                    url: "videos/sirius/sirius-chair.m4v",
+                    values: {
+                        mul: 0.002,
+                        add: 0.002,
+                        phase: 0.5
+                    }
+                }
             ],
             light: [
-                "videos/light/window-plant-720p.m4v",
-                "videos/light/blanket-720p.mov"
+                {
+                    url: "videos/light/window-plant-720p.m4v"
+                },
+                {
+                    url: "videos/light/blanket-720p.mov"
+                }
             ]
         },
         
@@ -105,7 +135,8 @@
                         funcName: "colin.siriusHome.makeVideoUpdater",
                         args: [
                             "{that}.sirius.source",
-                            "{that}.options.videoSequences.sirius.1"
+                            "{that}.options.videoSequences.sirius.1",
+                            "{that}.thresholdSynth"
                         ]
                     }
                 }
@@ -118,7 +149,8 @@
                         funcName: "colin.siriusHome.makeVideoUpdater",
                         args: [
                             "{that}.sirius.source",
-                            "{that}.options.videoSequences.sirius.2"
+                            "{that}.options.videoSequences.sirius.2",
+                            "{that}.thresholdSynth"
                         ]
                     }
                 }
@@ -131,7 +163,8 @@
                         funcName: "colin.siriusHome.makeVideoUpdater",
                         args: [
                             "{that}.sirius.source",
-                            "{that}.options.videoSequences.sirius.3"
+                            "{that}.options.videoSequences.sirius.3",
+                            "{that}.thresholdSynth"
                         ]
                     }
                 }
@@ -185,7 +218,7 @@
         components: {
             source: {
                 options: {
-                    url: "{siriusHome}.options.videoSequences.sirius.0"
+                    url: "{siriusHome}.options.videoSequences.sirius.0.url"
                 }
             }
         },
@@ -203,7 +236,7 @@
         components: {
             source: {
                 options: {
-                    url: "{siriusHome}.options.videoSequences.light.0",
+                    url: "{siriusHome}.options.videoSequences.light.0.url",
                     listeners: {
                         onVideoEnded: {
                             funcName: "colin.siriusHome.nextVideo",
@@ -211,7 +244,8 @@
                                 "{siriusHome}.model.currentClips", 
                                 "light", 
                                 "{siriusHome}.options.videoSequences.light", 
-                                "{lightLayer}.source"
+                                "{lightLayer}.source",
+                                "{siriusHome}.thresholdSynth"
                             ]
                         }
                     }
@@ -222,20 +256,28 @@
         bindToTextureUnit: "TEXTURE1"
     });
     
-    colin.siriusHome.makeVideoUpdater = function (source, url) {
+    colin.siriusHome.updateState = function (source, clipSpec, synth) {
+        if (clipSpec.values) {
+            synth.namedNodes.thresholdSine.set(clipSpec.values);
+        }
+        
+        source.setURL(clipSpec.url);
+    };
+    
+    colin.siriusHome.makeVideoUpdater = function (source, clipSpec, synth) {
         return function () {
-            source.setURL(url);
+            colin.siriusHome.updateState(source, clipSpec, synth);
         };
     };
     
-    colin.siriusHome.nextVideo = function (model, path, sequence, video) {
+    colin.siriusHome.nextVideo = function (model, path, sequence, source, synth) {
         model[path]++;
         if (model[path] >= sequence.length) {
             model[path] = 0;
         }
         
-        var url = sequence[model[path]];
-        video.setURL(url);
+        var clipSpec = sequence[model[path]];
+        colin.siriusHome.updateState(source, clipSpec, synth);
     };
     
     colin.siriusHome.makeStageVertex = function (gl) {
@@ -253,7 +295,7 @@
         
         thresholdSineUGen.gen(1);
         var threshold = thresholdSineUGen.output[0];
-
+        
         // Set the threshold.
         gl.uniform1f(glManager.shaderProgram.threshold, threshold);
         
