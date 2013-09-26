@@ -61,7 +61,7 @@
             element: {
                 expander: {
                     funcName: "aconite.video.setupVideo",
-                    args: ["{that}", "{that}.options.url", "{that}.options.autoPlay"]
+                    args: ["{that}", "{that}.options.url"]
                 }
             }
         },
@@ -86,28 +86,31 @@
         
         url: "",
         
-        autoPlay: true,
-        
         templates: {
-            video: "<video src='%url' autoplay='%autoPlay' muted='true'/>"
+            video: "<video src='%url' muted='true'/>"
         } 
     });
     
-    aconite.video.renderVideo = function (template, url, autoPlay) {
-        var videoHTML = fluid.stringTemplate(template, {
-            url: url,
-            autoPlay: autoPlay
+    aconite.video.renderVideo = function (that, url) {
+        var videoHTML = fluid.stringTemplate(that.options.templates.video, {
+            url: url
         });
         
-        return $(videoHTML)[0];
+        var video = $(videoHTML);
+        
+        video.bind("canplay", function () {
+            that.events.onVideoLoaded.fire(video);
+        });
+        
+        video.bind("ended", function () {
+            that.events.onVideoEnded.fire(video);
+        });
+        
+        return video[0];
     };
     
-    aconite.video.setupVideo = function (that, url, autoPlay) {
-        var video = aconite.video.renderVideo(that.options.templates.video, url, autoPlay);
-        
-        video.addEventListener("canplay", function (e) {
-            that.events.onVideoLoaded.fire(video);
-        }, true);
+    aconite.video.setupVideo = function (that, url) {
+        var video = aconite.video.renderVideo(that, url);
         
         var once = function (e) {
             that.events.onReady.fire(that);
@@ -115,10 +118,6 @@
         };
         
         video.addEventListener("canplay", once, true);
-        
-        video.addEventListener("ended", function (e) {
-            that.events.onVideoEnded.fire(video);
-        }, true);
         
         return video;
     };

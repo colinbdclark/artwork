@@ -316,10 +316,7 @@
             layer: {},
             
             preRoller: {
-                type: "aconite.video",
-                options: {
-                    autoPlay: false
-                }
+                type: "aconite.video"
             }
         },
         
@@ -350,12 +347,13 @@
     };
     
     colin.clipScheduler.preRollClip = function (preRoller, clip) {
-        var url = clip.url;/*,
+        var url = clip.url,
             inTime = clip.inTime;
+            
         if (clip.inTime) {
-            url = url + "#t=" + inTime;
-        }*/
-                
+            url = url + "#t=" + inTime + "," + (inTime + clip.duration);
+        }
+        
         preRoller.setURL(url);
     };
     
@@ -403,10 +401,7 @@
         
         components: {
             layer: {
-                type: "colin.siriusHome.siriusLayer",
-                options: {
-                    autoPlay: false
-                }
+                type: "colin.siriusHome.siriusLayer"
             }
         },
         
@@ -489,9 +484,10 @@
                 url: "videos/sirius/other-sirius-closeup-breathing-720p.m4v",
                 duration: 34,
                 values: {
-                    mul: 0.05,
-                    add: 0.05,
-                    phase: 0.0
+                    mul: 0.03,
+                    add: 0.04,
+                    phase: 0.75,
+                    freq: 1/60
                 }
             },
             {
@@ -499,9 +495,9 @@
                 inTime: 25,
                 duration: 120,
                 values: {
-                    mul: 0.2,
-                    add: 0.2,
-                    phase: 0.4
+                    mul: 0.05,
+                    add: 0.05,
+                    phase: 0.5
                 }
             }
         ]
@@ -512,10 +508,7 @@
         
         components: {
             layer: {
-                type: "colin.siriusHome.lightLayer",
-                options: {
-                    autoPlay: false
-                }
+                type: "colin.siriusHome.lightLayer"
             }
         },
         
