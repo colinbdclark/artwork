@@ -138,7 +138,7 @@
         components: {
             source: {
                 options: {
-                    url: "{siriusHome}.options.videoSequences.sirius.0.url"
+                    url: "{sirius}.options.clipSequence.0.url"
                 }
             }
         },
@@ -153,25 +153,13 @@
             gl: "{glManager}.gl"
         },
         
-        /*components: {
+        components: {
             source: {
                 options: {
-                    url: "{siriusHome}.options.videoSequences.light.0.url",
-                    listeners: {
-                        onVideoEnded: {
-                            funcName: "colin.siriusHome.nextVideo",
-                            args: [
-                                "{siriusHome}.model.currentClips", 
-                                "light", 
-                                "{siriusHome}.options.videoSequences.light", 
-                                "{lightLayer}.source",
-                                "{siriusHome}.thresholdSynth"
-                            ]
-                        }
-                    }
+                    url: "{light}.options.clipSequence.0.url"
                 }
             }
-        },*/
+        },
         
         bindToTextureUnit: "TEXTURE1"
     });
@@ -298,9 +286,13 @@
         clipSequence: []
     });
     
-    colin.clipScheduler.swapClips = function (source, preRoller) {
+    colin.clipScheduler.swapClips = function (source, preRoller, inTime) {
         var displayEl = source.element,
             preRollEl = preRoller.element;
+        
+        preRollEl.currentTime = inTime === undefined ? 0 : inTime;
+        preRollEl.play();
+        displayEl.pause();
         
         source.element = preRollEl;
         preRoller.element = displayEl;
@@ -308,14 +300,15 @@
     
     colin.clipScheduler.displayClip = function (layer, clip, preRoller, onNextClip) {
         onNextClip.fire(clip);
-        colin.clipScheduler.swapClips(layer.source, preRoller);
+        colin.clipScheduler.swapClips(layer.source, preRoller, clip.inTime);
     };
     
     colin.clipScheduler.preRollClip = function (preRoller, clip) {
-        var url = clip.url;
+        var url = clip.url;/*,
+            inTime = clip.inTime;
         if (clip.inTime) {
-            url = url + "#t=" + clip.inTime + "," + clip.dur;
-        }
+            url = url + "#t=" + inTime;
+        }*/
         
         preRoller.setURL(url);
     };
@@ -336,16 +329,19 @@
     
     // TODO: Ridiculous arg list means ridiculous dependency structure.
     colin.clipScheduler.start = function (model, sequence, clock, layer, preRoller, onNextClip, loop) {
-        var idx = model.clipIdx = 0,
-            clip = sequence[idx];
-        
-        colin.clipScheduler.displayClip(layer, clip, preRoller, onNextClip);
+        var idx = model.clipIdx = 0;
+        layer.source.element.play();
         colin.clipScheduler.scheduleNextClip(model, sequence, clock, layer, preRoller, onNextClip, loop);
     };
     
     colin.clipScheduler.scheduleNextClip = function (model, sequence, clock, layer, preRoller, onNextClip, loop) {
-        var nextClip = colin.clipScheduler.nextClip(model, sequence, loop),
-            currentClip = sequence[model.clipIdx];
+        var idx = model.clipIdx >= sequence.length ? 0 : model.clipIdx,
+            nextClip = colin.clipScheduler.nextClip(model, sequence, loop),
+            currentClip = sequence[idx];
+        
+        if (!nextClip) {
+            return;
+        }
         
         colin.clipScheduler.preRollClip(preRoller, nextClip);
         clock.once(currentClip.duration, function () {
@@ -361,47 +357,77 @@
         
         components: {
             layer: {
-                type: "colin.siriusHome.siriusLayer"
+                type: "colin.siriusHome.siriusLayer",
+                options: {
+                    autoPlay: false
+                }
             }
         },
         
         clipSequence: [
+
+            {
+                url: "videos/light/steady/bedroom-light-720p.m4v",
+                duration: 10
+            },
+            {
+                url: "videos/sirius/sirius-chair.m4v",
+                duration: 15,
+                values: {
+                    mul: 0,
+                    add: 0
+                }
+            },
+            
+            {
+                url: "videos/light/steady/kitchen-tiles-720p.m4v",
+                duration: 14,
+                values: {
+                    mul: 0.0,
+                    add: 0.0
+                }
+            },
+            
             {
                 url: "videos/sirius/dying-plants-sirius-720p.mov",
-                inTime: 0, // This value is relative to the clip and can be omitted.
-                dur: 58,
+                duration: 44,
                 values: {
                     mul: 0.003,
                     add: 0.003,
-                    phase: 1.0
+                    phase: 0.5
                 }
             },
             
             {
                 url: "videos/sirius/sirius-fur-basement-720p.m4v",
-                duration: 16,
+                inTime: 1,
+                duration: 15,
                 values: {
-                    mul: 0.0025,
-                    add: 0.0025
-                }
-            },
-            
-            {
-                url: "videos/sirius/sirius-fur-basement-720p.m4v#t=23",
-                inTime: 23,
-                duration: 16,
-                values: {
-                    mul: 0.0025,
-                    add: 0.0025
+                    mul: 0.003,
+                    add: 0.003  
                 }
             },
             {
-                url: "videos/sirius/sirius-chair.m4v",
+                url: "videos/light/window-dust-plant-pan-720p.m4v",
+                duration: 6,
                 values: {
-                    mul: 0.002,
-                    add: 0.002,
-                    phase: 0.5
+                    mul: 0.0,
+                    add: 0.0
                 }
+            },
+            {
+                url: "videos/sirius/laying-in-the-sun-on-the-floor-720p.m4v",
+                inTime: 10,
+                duration: 35,
+                values: {
+                    mul: 0.006,
+                    add: 0.006
+                }
+            },
+            {
+                url: "videos/sirius/pan-across-sirius-720p.m4v",
+                inTime: 2,
+                duration: 28
             }
         ]
     });
@@ -411,7 +437,10 @@
         
         components: {
             layer: {
-                type: "colin.siriusHome.lightLayer"
+                type: "colin.siriusHome.lightLayer",
+                options: {
+                    autoPlay: false
+                }
             }
         },
         
@@ -419,12 +448,25 @@
         
         clipSequence: [
             {
+                url: "videos/light/steady/bedroom-light-720p.m4v",
+                duration: 53
+            },
+            {
                 url: "videos/light/window-plant-720p.m4v",
-                dur: 46
+                duration: 46
             },
             {
                 url: "videos/light/blanket-720p.mov",
-                dur: 20
+                duration: 20
+            },
+            {
+                url: "videos/light/window-dust-plant-pan-720p.m4v",
+                duration: 38
+            },
+            {
+                url: "videos/light/pan-across-plants.m4v",
+                inTime: 10,
+                duration: 90
             }
         ]
     });
