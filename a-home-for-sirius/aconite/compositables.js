@@ -125,7 +125,7 @@
     
     aconite.video.updateVideoURL = function (that, url) {
         that.model.url = url;
-        that.element.src = url;    
+        that.element.src = url;
         return that.element;
     };
     

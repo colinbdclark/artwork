@@ -11,7 +11,13 @@
             
             .stage {
                 text-align: center;
-                margin-top: 7.5%;
+            }
+            
+            .play-overlay {
+                background-color: rgba(0,0,0);
+                position: absolute;
+                top: 400px;
+                left: 720px;
             }
         </style>
         
@@ -40,10 +46,8 @@
     <body>
 
         <div class="stage">
+            <img class="play-overlay" src="images/play_overlay.png"></img>
             <canvas class="aconite-glComponent-canvas" width="1280" height="720" />
-        </div>
-        
-        <div class="videos">
         </div>
         
         <script>

@@ -19,6 +19,11 @@
                 container: "{that}.dom.stage"
             },
             
+            playButton: {
+                type: "colin.siriusHome.playButton",
+                container: "{that}.dom.playButton"
+            },
+            
             siriusClips: {
                 type: "colin.siriusHome.clips.sirius",
                 options: {
@@ -88,7 +93,8 @@
         },
         
         selectors: {
-            stage: ".stage"
+            stage: ".stage",
+            playButton: ".play-overlay"
         }
     });
     
@@ -128,6 +134,46 @@
             ]
         }
     });
+    
+    fluid.defaults("colin.siriusHome.playButton", {
+        gradeNames: ["fluid.viewComponent", "autoInit"],
+        
+        invokers: {
+            playFullScreen: {
+                funcName: "colin.siriusHome.playButton.playFullScreen",
+                args: ["{that}.container", "{that}.events.onPlay"]
+            }
+        },
+        
+        events: {
+            onPlay: null
+        },
+        
+        listeners: {
+            onCreate: {
+                "this": "{that}.container",
+                method: "click",
+                args: ["{that}.playFullScreen"]
+            }
+        }
+    });
+    
+    colin.siriusHome.playButton.playFullScreen = function (playButton, onPlay) {
+        var body = $("body")[0],
+            rfs;
+        
+        if (body.webkitRequestFullScreen) {
+            rfs = "webkitRequestFullScreen";
+        } else if (body.mozRequestFullScreen){
+            rfs = "mozRequestFullScreen";
+        } else {
+            rfs = "requestFullScreen";
+        }
+        
+        playButton.hide();
+        body[rfs]();
+        onPlay.fire();
+    };
     
     fluid.defaults("colin.siriusHome.siriusLayer", {
         gradeNames: ["aconite.compositableVideo", "autoInit"],
@@ -309,7 +355,7 @@
         if (clip.inTime) {
             url = url + "#t=" + inTime;
         }*/
-        
+                
         preRoller.setURL(url);
     };
     
@@ -343,7 +389,7 @@
             return;
         }
         
-        colin.clipScheduler.preRollClip(preRoller, nextClip);
+        colin.clipScheduler.preRollClip(preRoller, nextClip);        
         clock.once(currentClip.duration, function () {
             colin.clipScheduler.displayClip(layer, nextClip, preRoller, onNextClip);
             model.clipIdx++;
@@ -365,7 +411,6 @@
         },
         
         clipSequence: [
-
             {
                 url: "videos/light/steady/bedroom-light-720p.m4v",
                 duration: 10
@@ -400,19 +445,27 @@
             
             {
                 url: "videos/sirius/sirius-fur-basement-720p.m4v",
-                inTime: 1,
-                duration: 15,
+                duration: 16,
                 values: {
-                    mul: 0.003,
-                    add: 0.003  
+                    mul: 0.005,
+                    add: 0.005  
                 }
             },
             {
-                url: "videos/light/window-dust-plant-pan-720p.m4v",
-                duration: 6,
+                url: "videos/light/steady/steady-cactus-720p.m4v",
+                inTime: 4,
+                duration: 10,
                 values: {
                     mul: 0.0,
                     add: 0.0
+                }
+            },
+            {
+                url: "videos/sirius/sirius-closeup-breathing-shadows-720p.m4v",
+                duration: 19,
+                values: {
+                    mul: 0.025,
+                    add: 0.025
                 }
             },
             {
@@ -420,14 +473,36 @@
                 inTime: 10,
                 duration: 35,
                 values: {
-                    mul: 0.006,
-                    add: 0.006
+                    mul: 0.009,
+                    add: 0.009
                 }
             },
             {
-                url: "videos/sirius/pan-across-sirius-720p.m4v",
-                inTime: 2,
-                duration: 28
+                url: "videos/light/steady/plant-steady-720p.m4v",
+                duration: 25,
+                values: {
+                    mul: 0.0,
+                    add: 0.0
+                }
+            },
+            {
+                url: "videos/sirius/other-sirius-closeup-breathing-720p.m4v",
+                duration: 34,
+                values: {
+                    mul: 0.05,
+                    add: 0.05,
+                    phase: 0.0
+                }
+            },
+            {
+                url: "videos/sirius/dying-grass-sirius-720p.mov",
+                inTime: 25,
+                duration: 120,
+                values: {
+                    mul: 0.2,
+                    add: 0.2,
+                    phase: 0.4
+                }
             }
         ]
     });
@@ -466,7 +541,11 @@
             {
                 url: "videos/light/pan-across-plants.m4v",
                 inTime: 10,
-                duration: 90
+                duration: 25
+            },
+            {
+                url: "videos/light/vitamix-720p.mov",
+                duration: 240
             }
         ]
     });
