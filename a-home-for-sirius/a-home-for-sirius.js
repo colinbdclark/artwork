@@ -442,8 +442,8 @@
                 url: "videos/sirius/sirius-fur-basement-720p.m4v",
                 duration: 16,
                 values: {
-                    mul: 0.005,
-                    add: 0.005  
+                    mul: 0.006,
+                    add: 0.006
                 }
             },
             {
