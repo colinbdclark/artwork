@@ -51,13 +51,17 @@
     };
     
     fluid.defaults("aconite.video", {
-        gradeNames: ["fluid.eventedComponent", "autoInit"],
+        gradeNames: ["fluid.modelComponent", "fluid.eventedComponent", "autoInit"],
+        
+        model: {
+            url: "{that}.options.url"
+        },
         
         members: {
             element: {
                 expander: {
                     funcName: "aconite.video.setupVideo",
-                    args: ["{that}", "{that}.options.url"]
+                    args: ["{that}", "{that}.options.url", "{that}.options.autoPlay"]
                 }
             }
         },
@@ -82,21 +86,24 @@
         
         url: "",
         
+        autoPlay: true,
+        
         templates: {
-            video: "<video src='%url' autoplay='true' muted='true'/>"
+            video: "<video src='%url' autoplay='%autoPlay' muted='true'/>"
         } 
     });
     
-    aconite.video.renderVideo = function (template, url) {
+    aconite.video.renderVideo = function (template, url, autoPlay) {
         var videoHTML = fluid.stringTemplate(template, {
-            url: url
+            url: url,
+            autoPlay: autoPlay
         });
         
         return $(videoHTML)[0];
     };
     
-    aconite.video.setupVideo = function (that, url) {
-        var video = aconite.video.renderVideo(that.options.templates.video, url);
+    aconite.video.setupVideo = function (that, url, autoPlay) {
+        var video = aconite.video.renderVideo(that.options.templates.video, url, autoPlay);
         
         video.addEventListener("canplay", function (e) {
             that.events.onVideoLoaded.fire(video);
@@ -117,6 +124,7 @@
     };
     
     aconite.video.updateVideoURL = function (that, url) {
+        that.model.url = url;
         that.element.src = url;    
         return that.element;
     };

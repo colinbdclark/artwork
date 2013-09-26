@@ -19,16 +19,20 @@
                 container: "{that}.dom.stage"
             },
             
-            clock: {
-                type: "flock.scheduler.async"
+            siriusClips: {
+                type: "colin.siriusHome.clips.sirius",
+                options: {
+                    listeners: {
+                        onNextClip: {
+                            funcName: "{siriusHome}.thresholdSynth.namedNodes.thresholdSine.set",
+                            args: ["{arguments}.0.values"]
+                        }
+                    }
+                }
             },
             
-            sirius: {
-                type: "colin.siriusHome.siriusLayer"
-            },
-            
-            light: {
-                type: "colin.siriusHome.lightLayer",
+            lightClips: {
+                type: "colin.siriusHome.clips.light"
             },
             
             thresholdSynth: {
@@ -53,8 +57,8 @@
         events: {
             onVideosReady: {
                 events: {
-                    siriusFirstReady: "{that}.sirius.source.events.onReady",
-                    lightFirstReady: "{that}.light.source.events.onReady"
+                    siriusFirstReady: "{siriusClips}.preRoller.events.onReady",
+                    lightFirstReady: "{lightClips}.preRoller.events.onReady"
                 },
                 args: ["{arguments}.siriusFirstReady.0", "{arguments}.lightFirstReady.0"]
             },
@@ -66,110 +70,26 @@
                 funcName: "colin.siriusHome.scheduleAnimation",
                 args: [
                     "{glManager}",
-                    "{siriusHome}.sirius",
-                    "{siriusHome}.light",
+                    "{siriusHome}.siriusClips.layer",
+                    "{siriusHome}.lightClips.layer",
                     "{siriusHome}.thresholdSynth",
                     "{siriusHome}.events.onStart"
                 ]
             },
             
-            onStart: {
-                funcName: "{clock}.schedule",
-                args: ["{siriusHome}.options.score"]
-            }
-        },
-        
-        selectors: {
-            stage: ".stage"
-        },
-        
-        videoSequences: {
-            sirius: [
+            onCreate: [
                 {
-                    url: "videos/sirius/dying-plants-sirius-720p.mov",
-                    values: {
-                        mul: 0.003,
-                        add: 0.003,
-                        phase: 1.0
-                    }
+                    funcName: "{siriusClips}.start"
                 },
                 {
-                    url: "videos/sirius/sirius-fur-basement-720p.m4v",
-                    values: {
-                        mul: 0.0025,
-                        add: 0.0025
-                    }
-                },
-                {
-                    url: "videos/sirius/sirius-fur-basement-720p.m4v#t=23",
-                    values: {
-                        mul: 0.0025,
-                        add: 0.0025
-                    }
-                },
-                {
-                    url: "videos/sirius/sirius-chair.m4v",
-                    values: {
-                        mul: 0.002,
-                        add: 0.002,
-                        phase: 0.5
-                    }
-                }
-            ],
-            light: [
-                {
-                    url: "videos/light/window-plant-720p.m4v"
-                },
-                {
-                    url: "videos/light/blanket-720p.mov"
+                    funcName: "{lightClips}.start"
                 }
             ]
         },
         
-        score: [
-            {
-                interval: "once",
-                time: 58,
-                change: {
-                    expander: {
-                        funcName: "colin.siriusHome.makeVideoUpdater",
-                        args: [
-                            "{that}.sirius.source",
-                            "{that}.options.videoSequences.sirius.1",
-                            "{that}.thresholdSynth"
-                        ]
-                    }
-                }
-            },
-            {
-                interval: "once",
-                time: 74,
-                change: {
-                    expander: {
-                        funcName: "colin.siriusHome.makeVideoUpdater",
-                        args: [
-                            "{that}.sirius.source",
-                            "{that}.options.videoSequences.sirius.2",
-                            "{that}.thresholdSynth"
-                        ]
-                    }
-                }
-            },
-            {
-                interval: "once",
-                time: 90,
-                change: {
-                    expander: {
-                        funcName: "colin.siriusHome.makeVideoUpdater",
-                        args: [
-                            "{that}.sirius.source",
-                            "{that}.options.videoSequences.sirius.3",
-                            "{that}.thresholdSynth"
-                        ]
-                    }
-                }
-            }
-        ]
+        selectors: {
+            stage: ".stage"
+        }
     });
     
     fluid.defaults("colin.siriusHome.glManager", {
@@ -233,7 +153,7 @@
             gl: "{glManager}.gl"
         },
         
-        components: {
+        /*components: {
             source: {
                 options: {
                     url: "{siriusHome}.options.videoSequences.light.0.url",
@@ -251,7 +171,7 @@
                     }
                 }
             }
-        },
+        },*/
         
         bindToTextureUnit: "TEXTURE1"
     });
@@ -331,4 +251,181 @@
         onStart.fire();
     };
     
+    
+    fluid.defaults("colin.clipScheduler", {
+        gradeNames: ["fluid.modelComponent", "fluid.eventedComponent", "autoInit"],
+        
+        model: {
+            clipIdx: 0
+        },
+        
+        invokers: {
+            start: {
+                funcName: "colin.clipScheduler.start",
+                args: [
+                    "{that}.model",
+                    "{that}.options.clipSequence",
+                    "{that}.clock",
+                    "{that}.layer",
+                    "{that}.preRoller",
+                    "{that}.events.onNextClip",
+                    "{that}.options.loop"
+                ]
+            }
+        },
+        
+        components: {
+            clock: {
+                type: "flock.scheduler.async"
+            },
+            
+            layer: {},
+            
+            preRoller: {
+                type: "aconite.video",
+                options: {
+                    autoPlay: false
+                }
+            }
+        },
+        
+        events: {
+            onNextClip: null
+        },
+        
+        loop: false,
+        
+        clipSequence: []
+    });
+    
+    colin.clipScheduler.swapClips = function (source, preRoller) {
+        var displayEl = source.element,
+            preRollEl = preRoller.element;
+        
+        source.element = preRollEl;
+        preRoller.element = displayEl;
+    };
+    
+    colin.clipScheduler.displayClip = function (layer, clip, preRoller, onNextClip) {
+        onNextClip.fire(clip);
+        colin.clipScheduler.swapClips(layer.source, preRoller);
+    };
+    
+    colin.clipScheduler.preRollClip = function (preRoller, clip) {
+        var url = clip.url;
+        if (clip.inTime) {
+            url = url + "#t=" + clip.inTime + "," + clip.dur;
+        }
+        
+        preRoller.setURL(url);
+    };
+    
+    colin.clipScheduler.nextClip = function (model, sequence, loop) {
+        var nextIdx = model.clipIdx + 1;
+            
+        if (nextIdx >= sequence.length) {
+            if (loop) {
+                nextIdx = 0;
+            } else {
+                return;
+            }
+        }
+        
+        return sequence[nextIdx];
+    };
+    
+    // TODO: Ridiculous arg list means ridiculous dependency structure.
+    colin.clipScheduler.start = function (model, sequence, clock, layer, preRoller, onNextClip, loop) {
+        var idx = model.clipIdx = 0,
+            clip = sequence[idx];
+        
+        colin.clipScheduler.displayClip(layer, clip, preRoller, onNextClip);
+        colin.clipScheduler.scheduleNextClip(model, sequence, clock, layer, preRoller, onNextClip, loop);
+    };
+    
+    colin.clipScheduler.scheduleNextClip = function (model, sequence, clock, layer, preRoller, onNextClip, loop) {
+        var nextClip = colin.clipScheduler.nextClip(model, sequence, loop),
+            currentClip = sequence[model.clipIdx];
+        
+        colin.clipScheduler.preRollClip(preRoller, nextClip);
+        clock.once(currentClip.duration, function () {
+            colin.clipScheduler.displayClip(layer, nextClip, preRoller, onNextClip);
+            model.clipIdx++;
+            colin.clipScheduler.scheduleNextClip(model, sequence, clock, layer, preRoller, onNextClip, loop);
+        });
+    };
+
+    
+    fluid.defaults("colin.siriusHome.clips.sirius", {
+        gradeNames: ["colin.clipScheduler", "autoInit"],
+        
+        components: {
+            layer: {
+                type: "colin.siriusHome.siriusLayer"
+            }
+        },
+        
+        clipSequence: [
+            {
+                url: "videos/sirius/dying-plants-sirius-720p.mov",
+                inTime: 0, // This value is relative to the clip and can be omitted.
+                dur: 58,
+                values: {
+                    mul: 0.003,
+                    add: 0.003,
+                    phase: 1.0
+                }
+            },
+            
+            {
+                url: "videos/sirius/sirius-fur-basement-720p.m4v",
+                duration: 16,
+                values: {
+                    mul: 0.0025,
+                    add: 0.0025
+                }
+            },
+            
+            {
+                url: "videos/sirius/sirius-fur-basement-720p.m4v#t=23",
+                inTime: 23,
+                duration: 16,
+                values: {
+                    mul: 0.0025,
+                    add: 0.0025
+                }
+            },
+            {
+                url: "videos/sirius/sirius-chair.m4v",
+                values: {
+                    mul: 0.002,
+                    add: 0.002,
+                    phase: 0.5
+                }
+            }
+        ]
+    });
+
+    fluid.defaults("colin.siriusHome.clips.light", {
+        gradeNames: ["colin.clipScheduler", "autoInit"],
+        
+        components: {
+            layer: {
+                type: "colin.siriusHome.lightLayer"
+            }
+        },
+        
+        loop: true,
+        
+        clipSequence: [
+            {
+                url: "videos/light/window-plant-720p.m4v",
+                dur: 46
+            },
+            {
+                url: "videos/light/blanket-720p.mov",
+                dur: 20
+            }
+        ]
+    });
 }());
