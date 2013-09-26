@@ -25,21 +25,4 @@ void main(void) {
         (siriusFrag.b * fu) + (lightFrag.b * fv),
         siriusFrag.a
     );
-    /*
-    if (luminance > threshold) {
-        gl_FragColor = siriusFrag;
-    } else if (luminance * 1.5 > threshold) {
-        gl_FragColor = lightFrag * siriusFrag;
-    } else {
-        vec4 lightFrag = texture2D(lightSampler, coords);
-        vec4 combined = vec4(
-            siriusFrag.r + (lightFrag.r - luminance),
-            siriusFrag.g + (lightFrag.g - luminance),
-            siriusFrag.b + (lightFrag.b - luminance),
-            lightFrag.a
-        );
-        //vec4 combined = lightFrag * siriusFrag;
-        gl_FragColor = combined;
-    }
-    */
 }
