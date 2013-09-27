@@ -474,7 +474,7 @@
             },
             {
                 url: "videos/light/steady/plant-steady-720p.m4v",
-                duration: 25,
+                duration: 33,
                 values: {
                     mul: 0.0,
                     add: 0.0
@@ -484,8 +484,8 @@
                 url: "videos/sirius/other-sirius-closeup-breathing-720p.m4v",
                 duration: 34,
                 values: {
-                    mul: 0.03,
-                    add: 0.04,
+                    mul: 0.025,
+                    add: 0.05,
                     phase: 0.75,
                     freq: 1/60
                 }
