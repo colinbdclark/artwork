@@ -41,7 +41,7 @@
             },
             
             thresholdSynth: {
-                type: "flock.synth",
+                type: "flock.synth.frameRate",
                 options: {
                     synthDef: {
                         id: "thresholdSine",
@@ -50,11 +50,9 @@
                         freq: 1/360,
                         mul: 0.0028,
                         add: 0.0028,
-                        rate: "frame"
                     },
-                    audioSettings: {
-                        rate: "frame"
-                    }
+                    
+                    fps: 60
                 }
             }
         },
@@ -121,6 +119,10 @@
             },
 
             threshold: {
+                storage: "uniform"
+            },
+            
+            textureSize: {
                 storage: "uniform"
             }
         },
@@ -245,10 +247,7 @@
     
     colin.siriusHome.drawFrame = function (glManager, sirius, light, synth) {
         var gl = glManager.gl,
-            thresholdSineUGen = synth.namedNodes.thresholdSine;
-        
-        thresholdSineUGen.gen(1);
-        var threshold = thresholdSineUGen.output[0];
+            threshold = synth.value();
         
         // Set the threshold.
         gl.uniform1f(glManager.shaderProgram.threshold, threshold);
@@ -273,6 +272,9 @@
         
         // Set the threshold.
         gl.uniform1f(shaderProgram.threshold, 0.01);
+        
+        // Set the texture size.
+        gl.uniform2f(shaderProgram.textureSize, sirius.source.element.videoWidth, sirius.source.element.videoHeight);
         
         // TODO: Move this into aconite's square vertex function.
         gl.vertexAttribPointer(shaderProgram.aVertexPosition, 2, gl.FLOAT, false, 0, 0); 

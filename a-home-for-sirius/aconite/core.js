@@ -87,10 +87,14 @@
         shaderProgram[variable] = location;  
     };
     
+    // TODO: Only log in case of errors, or use fluid.log for more fine-grained control of logging.
     aconite.initShaders = function (gl, variables, shaders) {
         var shaderProgram = gl.createProgram();
+        console.log("code " +  gl.getError());
         gl.attachShader(shaderProgram, shaders.vertex);
+        console.log("code " +  gl.getError());
         gl.attachShader(shaderProgram, shaders.fragment);
+        console.log("code " +  gl.getError());
         gl.linkProgram(shaderProgram);
 
         if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
@@ -131,6 +135,8 @@
                 throw new Error("Unrecognised variable storage type " + info.storage);
             }
         });
+        
+        console.log("code " +  gl.getError());
         
         return shaderProgram;
     };
