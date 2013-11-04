@@ -24,8 +24,8 @@
                 container: "{that}.dom.stage"
             },
             
-            siriusClips: {
-                type: "colin.siriusHome.clips.sirius",
+            top: {
+                type: "colin.siriusHome.topSequencer",
                 options: {
                     listeners: {
                         onNextClip: {
@@ -36,8 +36,8 @@
                 }
             },
             
-            lightClips: {
-                type: "colin.siriusHome.clips.light"
+            bottom: {
+                type: "colin.siriusHome.bottomSequencer"
             },
             
             playButton: {
@@ -47,10 +47,10 @@
                     listeners: {
                         onPlay: [
                             {
-                                funcName: "{siriusClips}.start"
+                                funcName: "{top}.start"
                             },
                             {
-                                funcName: "{lightClips}.start"
+                                funcName: "{bottom}.start"
                             }
                         ]
                     }
@@ -77,8 +77,8 @@
         events: {
             onVideosReady: {
                 events: {
-                    siriusFirstReady: "{siriusClips}.preRoller.events.onReady",
-                    lightFirstReady: "{lightClips}.preRoller.events.onReady"
+                    siriusFirstReady: "{top}.preRoller.events.onReady",
+                    lightFirstReady: "{bottom}.preRoller.events.onReady"
                 },
                 args: ["{arguments}.siriusFirstReady.0", "{arguments}.lightFirstReady.0"]
             },
@@ -90,8 +90,8 @@
                 funcName: "colin.siriusHome.scheduleAnimation",
                 args: [
                     "{glManager}",
-                    "{siriusHome}.siriusClips.layer",
-                    "{siriusHome}.lightClips.layer",
+                    "{siriusHome}.top.layer",
+                    "{siriusHome}.bottom.layer",
                     "{siriusHome}.thresholdSynth",
                     "{siriusHome}.events.onStart"
                 ]
@@ -228,21 +228,21 @@
         aconite.makeSquareVertexBuffer(gl);
     };
     
-    colin.siriusHome.drawFrame = function (glManager, sirius, light, synth) {
+    colin.siriusHome.drawFrame = function (glManager, topLayer, bottomLayer, synth) {
         var gl = glManager.gl,
             threshold = synth.value();
         
         // Set the threshold.
         gl.uniform1f(glManager.shaderProgram.threshold, threshold);
         
-        sirius.refresh();
-        light.refresh();
+        topLayer.refresh();
+        bottomLayer.refresh();
         
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
     
     // TODO: Componentize.
-    colin.siriusHome.scheduleAnimation = function (glManager, sirius, light, synth, onStart) {
+    colin.siriusHome.scheduleAnimation = function (glManager, topLayer, bottomLayer, synth, onStart) {
         // TODO: Refactor
         var gl = glManager.gl,
             shaderProgram = glManager.shaderProgram;
@@ -257,14 +257,14 @@
         gl.uniform1f(shaderProgram.threshold, 0.01);
         
         // Set the texture size.
-        gl.uniform2f(shaderProgram.textureSize, sirius.source.element.videoWidth, sirius.source.element.videoHeight);
+        gl.uniform2f(shaderProgram.textureSize, topLayer.source.element.videoWidth, topLayer.source.element.videoHeight);
         
         // TODO: Move this into aconite's square vertex function.
         gl.vertexAttribPointer(shaderProgram.aVertexPosition, 2, gl.FLOAT, false, 0, 0); 
         
         // TODO: Hold onto a reference to the animator.
         var animator = aconite.animator(function () {
-            colin.siriusHome.drawFrame(glManager, sirius, light, synth);
+            colin.siriusHome.drawFrame(glManager, topLayer, bottomLayer, synth);
         });
         
         onStart.fire();

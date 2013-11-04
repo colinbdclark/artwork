@@ -3,25 +3,22 @@
     
     fluid.registerNamespace("colin");
     
-    /*************
-     * Top Layer *
-     *************/
-    
-    fluid.defaults("colin.siriusHome.layers.top", {
-        gradeNames: ["aconite.compositableVideo", "autoInit"],
+    fluid.defaults("colin.siriusHome.layer", {
+        gradeNames: ["aconite.compositableVideo"],
         members: {
             gl: "{glManager}.gl"
         },
         
-        components: {
-            source: {
-                options: {
-                    url: "{sirius}.options.clipSequence.0.url"
-                }
-            }
-        },
-        
         bindToTextureUnit: "TEXTURE0"
+    });
+    
+    
+    /*************
+     * Top Layer *
+     *************/
+    
+    fluid.defaults("colin.siriusHome.topLayer", {
+        gradeNames: ["colin.siriusHome.layer", "autoInit"]
     });
     
     
@@ -29,12 +26,21 @@
      * Top Layer Sequencer *
      ***********************/
     
-    fluid.defaults("colin.siriusHome.clips.sirius", {
+    fluid.defaults("colin.siriusHome.topSequencer", {
         gradeNames: ["colin.clipSequencer", "autoInit"],
     
         components: {
             layer: {
-                type: "colin.siriusHome.layers.top"
+                type: "colin.siriusHome.topLayer",
+                options: {
+                    components: {
+                        source: {
+                            options: {
+                                url: "{topSequencer}.options.clipSequence.0.url"
+                            }
+                        }
+                    }
+                }
             }
         },
     
@@ -141,22 +147,8 @@
      * Bottom Layer *
      ****************/
     
-    // TODO: Rename.
-    fluid.defaults("colin.siriusHome.layers.bottom", {
-        gradeNames: ["aconite.compositableVideo", "autoInit"],
-        
-        members: {
-            gl: "{glManager}.gl"
-        },
-        
-        components: {
-            source: {
-                options: {
-                    url: "{light}.options.clipSequence.0.url"
-                }
-            }
-        },
-        
+    fluid.defaults("colin.siriusHome.bottomLayer", {
+        gradeNames: ["colin.siriusHome.layer", "autoInit"],
         bindToTextureUnit: "TEXTURE1"
     });
     
@@ -165,12 +157,21 @@
      * Bottom Layer Sequencer *
      **************************/
     
-    fluid.defaults("colin.siriusHome.clips.light", {
+    fluid.defaults("colin.siriusHome.bottomSequencer", {
         gradeNames: ["colin.clipSequencer", "autoInit"],
     
         components: {
             layer: {
-                type: "colin.siriusHome.layers.bottom"
+                type: "colin.siriusHome.bottomLayer",
+                options: {
+                    components: {
+                        source: {
+                            options: {
+                                url: "{bottomSequencer}.options.clipSequence.0.url"
+                            }
+                        }
+                    }
+                }
             }
         },
     
