@@ -3,12 +3,38 @@
     
     fluid.registerNamespace("colin");
     
+    /*************
+     * Top Layer *
+     *************/
+    
+    fluid.defaults("colin.siriusHome.layers.top", {
+        gradeNames: ["aconite.compositableVideo", "autoInit"],
+        members: {
+            gl: "{glManager}.gl"
+        },
+        
+        components: {
+            source: {
+                options: {
+                    url: "{sirius}.options.clipSequence.0.url"
+                }
+            }
+        },
+        
+        bindToTextureUnit: "TEXTURE0"
+    });
+    
+    
+    /***********************
+     * Top Layer Sequencer *
+     ***********************/
+    
     fluid.defaults("colin.siriusHome.clips.sirius", {
-        gradeNames: ["colin.clipScheduler", "autoInit"],
+        gradeNames: ["colin.clipSequencer", "autoInit"],
     
         components: {
             layer: {
-                type: "colin.siriusHome.siriusLayer"
+                type: "colin.siriusHome.layers.top"
             }
         },
     
@@ -110,12 +136,41 @@
         ]
     });
 
+    
+    /****************
+     * Bottom Layer *
+     ****************/
+    
+    // TODO: Rename.
+    fluid.defaults("colin.siriusHome.layers.bottom", {
+        gradeNames: ["aconite.compositableVideo", "autoInit"],
+        
+        members: {
+            gl: "{glManager}.gl"
+        },
+        
+        components: {
+            source: {
+                options: {
+                    url: "{light}.options.clipSequence.0.url"
+                }
+            }
+        },
+        
+        bindToTextureUnit: "TEXTURE1"
+    });
+    
+    
+    /**************************
+     * Bottom Layer Sequencer *
+     **************************/
+    
     fluid.defaults("colin.siriusHome.clips.light", {
-        gradeNames: ["colin.clipScheduler", "autoInit"],
+        gradeNames: ["colin.clipSequencer", "autoInit"],
     
         components: {
             layer: {
-                type: "colin.siriusHome.lightLayer"
+                type: "colin.siriusHome.layers.bottom"
             }
         },
     

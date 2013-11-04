@@ -3,6 +3,11 @@
     
     fluid.registerNamespace("colin");
     
+    
+    /****************************************
+     * Main component for A Home For Sirius *
+     ****************************************/
+    
     fluid.defaults("colin.siriusHome", {
         gradeNames: ["fluid.viewComponent", "autoInit"],
 
@@ -19,11 +24,6 @@
                 container: "{that}.dom.stage"
             },
             
-            playButton: {
-                type: "colin.siriusHome.playButton",
-                container: "{that}.dom.playButton"
-            },
-            
             siriusClips: {
                 type: "colin.siriusHome.clips.sirius",
                 options: {
@@ -38,6 +38,23 @@
             
             lightClips: {
                 type: "colin.siriusHome.clips.light"
+            },
+            
+            playButton: {
+                type: "colin.siriusHome.playButton",
+                container: "{that}.dom.playButton",
+                options: {
+                    listeners: {
+                        onPlay: [
+                            {
+                                funcName: "{siriusClips}.start"
+                            },
+                            {
+                                funcName: "{lightClips}.start"
+                            }
+                        ]
+                    }
+                }
             },
             
             thresholdSynth: {
@@ -78,16 +95,7 @@
                     "{siriusHome}.thresholdSynth",
                     "{siriusHome}.events.onStart"
                 ]
-            },
-            
-            onCreate: [
-                {
-                    funcName: "{siriusClips}.start"
-                },
-                {
-                    funcName: "{lightClips}.start"
-                }
-            ]
+            }
         },
         
         selectors: {
@@ -95,6 +103,11 @@
             playButton: ".play-overlay"
         }
     });
+    
+    
+    /**************
+     * GL Manager *
+     **************/
     
     fluid.defaults("colin.siriusHome.glManager", {
         gradeNames: ["aconite.glComponent", "autoInit"],
@@ -137,6 +150,11 @@
         }
     });
     
+    
+    /***************
+     * Play Button *
+     ***************/
+    
     fluid.defaults("colin.siriusHome.playButton", {
         gradeNames: ["fluid.viewComponent", "autoInit"],
         
@@ -176,41 +194,6 @@
         body[rfs]();
         onPlay.fire();
     };
-    
-    fluid.defaults("colin.siriusHome.siriusLayer", {
-        gradeNames: ["aconite.compositableVideo", "autoInit"],
-        members: {
-            gl: "{glManager}.gl"
-        },
-        
-        components: {
-            source: {
-                options: {
-                    url: "{sirius}.options.clipSequence.0.url"
-                }
-            }
-        },
-        
-        bindToTextureUnit: "TEXTURE0"
-    });
-    
-    fluid.defaults("colin.siriusHome.lightLayer", {
-        gradeNames: ["aconite.compositableVideo", "autoInit"],
-        
-        members: {
-            gl: "{glManager}.gl"
-        },
-        
-        components: {
-            source: {
-                options: {
-                    url: "{light}.options.clipSequence.0.url"
-                }
-            }
-        },
-        
-        bindToTextureUnit: "TEXTURE1"
-    });
     
     colin.siriusHome.updateState = function (source, clipSpec, synth) {
         if (clipSpec.values) {

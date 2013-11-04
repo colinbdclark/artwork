@@ -3,7 +3,10 @@
     
     fluid.registerNamespace("colin");
     
-    fluid.defaults("colin.clipScheduler", {
+    /**
+     * Sequences the playback of a colection of clips described by the "clipSequence" option
+     */
+    fluid.defaults("colin.clipSequencer", {
         gradeNames: ["fluid.modelComponent", "fluid.eventedComponent", "autoInit"],
     
         model: {
@@ -12,7 +15,7 @@
     
         invokers: {
             start: {
-                funcName: "colin.clipScheduler.start",
+                funcName: "colin.clipSequencer.start",
                 args: [
                     "{that}.model",
                     "{that}.options.clipSequence",
@@ -46,7 +49,7 @@
         clipSequence: []
     });
 
-    colin.clipScheduler.swapClips = function (source, preRoller, inTime) {
+    colin.clipSequencer.swapClips = function (source, preRoller, inTime) {
         var displayEl = source.element,
             preRollEl = preRoller.element;
     
@@ -58,12 +61,12 @@
         preRoller.element = displayEl;
     };
 
-    colin.clipScheduler.displayClip = function (layer, clip, preRoller, onNextClip) {
+    colin.clipSequencer.displayClip = function (layer, clip, preRoller, onNextClip) {
         onNextClip.fire(clip);
-        colin.clipScheduler.swapClips(layer.source, preRoller, clip.inTime);
+        colin.clipSequencer.swapClips(layer.source, preRoller, clip.inTime);
     };
 
-    colin.clipScheduler.preRollClip = function (preRoller, clip) {
+    colin.clipSequencer.preRollClip = function (preRoller, clip) {
         var url = clip.url,
             inTime = clip.inTime;
         
@@ -74,7 +77,7 @@
         preRoller.setURL(url);
     };
 
-    colin.clipScheduler.nextClip = function (model, sequence, loop) {
+    colin.clipSequencer.nextClip = function (model, sequence, loop) {
         var nextIdx = model.clipIdx + 1;
         
         if (nextIdx >= sequence.length) {
@@ -89,26 +92,26 @@
     };
 
     // TODO: Ridiculous arg list means ridiculous dependency structure.
-    colin.clipScheduler.start = function (model, sequence, clock, layer, preRoller, onNextClip, loop) {
+    colin.clipSequencer.start = function (model, sequence, clock, layer, preRoller, onNextClip, loop) {
         var idx = model.clipIdx = 0;
         layer.source.element.play();
-        colin.clipScheduler.scheduleNextClip(model, sequence, clock, layer, preRoller, onNextClip, loop);
+        colin.clipSequencer.scheduleNextClip(model, sequence, clock, layer, preRoller, onNextClip, loop);
     };
 
-    colin.clipScheduler.scheduleNextClip = function (model, sequence, clock, layer, preRoller, onNextClip, loop) {
+    colin.clipSequencer.scheduleNextClip = function (model, sequence, clock, layer, preRoller, onNextClip, loop) {
         var idx = model.clipIdx >= sequence.length ? 0 : model.clipIdx,
-            nextClip = colin.clipScheduler.nextClip(model, sequence, loop),
+            nextClip = colin.clipSequencer.nextClip(model, sequence, loop),
             currentClip = sequence[idx];
     
         if (!nextClip) {
             return;
         }
     
-        colin.clipScheduler.preRollClip(preRoller, nextClip);
+        colin.clipSequencer.preRollClip(preRoller, nextClip);
         clock.once(currentClip.duration, function () {
-            colin.clipScheduler.displayClip(layer, nextClip, preRoller, onNextClip);
+            colin.clipSequencer.displayClip(layer, nextClip, preRoller, onNextClip);
             model.clipIdx++;
-            colin.clipScheduler.scheduleNextClip(model, sequence, clock, layer, preRoller, onNextClip, loop);
+            colin.clipSequencer.scheduleNextClip(model, sequence, clock, layer, preRoller, onNextClip, loop);
         });
     };
 
