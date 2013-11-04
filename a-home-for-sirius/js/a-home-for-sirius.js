@@ -21,7 +21,12 @@
         components: {
             glManager: {
                 type: "colin.siriusHome.glManager",
-                container: "{that}.dom.stage"
+                container: "{siriusHome}.dom.stage"
+            },
+            
+            animator: {
+                createOnEvent: "onVideosReady",
+                type: "colin.siriusHome.animator"
             },
             
             top: {
@@ -85,19 +90,6 @@
             onStart: null
         },
         
-        listeners: {
-            onVideosReady: {
-                funcName: "colin.siriusHome.scheduleAnimation",
-                args: [
-                    "{glManager}",
-                    "{siriusHome}.top.layer",
-                    "{siriusHome}.bottom.layer",
-                    "{siriusHome}.thresholdSynth",
-                    "{siriusHome}.events.onStart"
-                ]
-            }
-        },
-        
         selectors: {
             stage: ".stage",
             playButton: ".play-overlay"
@@ -144,7 +136,7 @@
             afterShaderProgramCompiled: [
                 {
                     funcName: "colin.siriusHome.makeStageVertex",
-                    args: ["{glManager}.gl"]
+                    args: ["{glManager}.gl", "{glManager}.shaderProgram.aVertexPosition"]
                 }
             ]
         }
@@ -219,13 +211,13 @@
         colin.siriusHome.updateState(source, clipSpec, synth);
     };
     
-    colin.siriusHome.makeStageVertex = function (gl) {
+    colin.siriusHome.makeStageVertex = function (gl, vertexPosition) {
         // Initialize to black
         gl.clearColor(0.0, 0.0, 0.0, 1.0);
         gl.enable(gl.DEPTH_TEST);
         gl.depthFunc(gl.LEQUAL);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        aconite.makeSquareVertexBuffer(gl);
+        aconite.makeSquareVertexBuffer(gl, vertexPosition);
     };
     
     colin.siriusHome.drawFrame = function (glManager, topLayer, bottomLayer, synth) {
@@ -240,34 +232,80 @@
         
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
+
+
+    // TODO: Generalize.
+    fluid.defaults("colin.siriusHome.animator", {
+        gradeNames: ["fluid.eventedComponent", "autoInit"],
+        
+        components: {
+            glManager: "{siriusHome}.glManager"
+        },
+        
+        uniforms: {
+            siriusSampler: {
+                type: "i",
+                value: 0
+            },
+            lightSampler: {
+                type: "i",
+                value: 1
+            },
+            threshold: {
+                type: "f",
+                value: 0.01
+            },
+            textureSize: {
+                type: "f",
+                value: [
+                    "{topSequencer}.layer.source.element.videoWidth",
+                    "{topSequencer}.layer.source.element.videoHeight"
+                ]
+            }
+        },
+        
+        listeners: {
+            onCreate: [
+                {
+                    funcName: "colin.siriusHome.animator.setUniforms",
+                    args: ["{glManager}.gl", "{glManager}.shaderProgram", "{that}.options.uniforms"]
+                },
+                {
+                    funcName: "colin.siriusHome.animator.scheduleFrameDrawer",
+                    args: [
+                        "{that}",
+                        "colin.siriusHome.drawFrame", 
+                        "{glManager}", 
+                        "{topSequencer}.layer", 
+                        "{bottomSequencer}.layer",
+                        "{synth}"
+                    ]
+                },
+                {
+                    funcName: "{siriusHome}.events.onStart.fire"
+                }
+            ]
+        }
+    });
     
-    // TODO: Componentize.
-    colin.siriusHome.scheduleAnimation = function (glManager, topLayer, bottomLayer, synth, onStart) {
-        // TODO: Refactor
-        var gl = glManager.gl,
-            shaderProgram = glManager.shaderProgram;
-
-        // TODO: Modelize all these variables.
-        
-        // Setup the texture samplers for each video.
-        gl.uniform1i(shaderProgram.siriusSampler, 0);
-        gl.uniform1i(shaderProgram.lightSampler, 1);
-        
-        // Set the threshold.
-        gl.uniform1f(shaderProgram.threshold, 0.01);
-        
-        // Set the texture size.
-        gl.uniform2f(shaderProgram.textureSize, topLayer.source.element.videoWidth, topLayer.source.element.videoHeight);
-        
-        // TODO: Move this into aconite's square vertex function.
-        gl.vertexAttribPointer(shaderProgram.aVertexPosition, 2, gl.FLOAT, false, 0, 0); 
-        
-        // TODO: Hold onto a reference to the animator.
-        var animator = aconite.animator(function () {
-            colin.siriusHome.drawFrame(glManager, topLayer, bottomLayer, synth);
+    colin.siriusHome.animator.setUniforms = function (gl, shaderProgram, uniforms) {
+        fluid.each(uniforms, function (valueSpec, key) {
+            var values = fluid.makeArray(valueSpec.value),
+                setter = "uniform" + values.length + valueSpec.type,
+                uniform = shaderProgram[key],
+                args = fluid.copy(values);
+            
+            args.unshift(uniform);
+            gl[setter].apply(gl, args);
         });
-        
-        onStart.fire();
     };
-
+    
+    colin.siriusHome.animator.scheduleFrameDrawer = function (that, frameDrawer, glManager, topLayer, bottomLayer, synth) {
+        frameDrawer = typeof (frameDrawer) === "function" ? frameDrawer : fluid.getGlobalValue(frameDrawer);
+                
+        that.animator = aconite.animator(function () {
+            frameDrawer(glManager, topLayer, bottomLayer, synth);
+        });
+    };
+    
 }());

@@ -141,7 +141,7 @@
         return shaderProgram;
     };
     
-    aconite.makeSquareVertexBuffer = function(gl) {   
+    aconite.makeSquareVertexBuffer = function(gl, vertexPosition) {
         var info = {
             vertices: new Float32Array([
                 -1, 1,   1,  1,   1, -1,  // Triangle 1
@@ -154,6 +154,10 @@
         info.buffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, info.buffer);
         gl.bufferData(gl.ARRAY_BUFFER, info.vertices, gl.STATIC_DRAW);
+        
+        if (vertexPosition !== undefined) {
+            gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
+        }
         
         return info;
     };
