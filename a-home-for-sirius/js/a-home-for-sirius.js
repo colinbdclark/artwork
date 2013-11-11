@@ -3,6 +3,12 @@
     
     fluid.registerNamespace("colin");
     
+    /*
+    TODO:
+     - Add support for fast-forwarding, which requires:
+        - setting the playback rate of both layers
+        - increasing the frequency of the threshold synth
+    */
     
     /****************************************
      * Main component for A Home For Sirius *

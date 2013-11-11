@@ -10,7 +10,8 @@
         gradeNames: ["fluid.modelComponent", "fluid.eventedComponent", "autoInit"],
     
         model: {
-            clipIdx: 0
+            clipIdx: 0,
+            clipSequence: []
         },
     
         invokers: {
@@ -18,7 +19,6 @@
                 funcName: "colin.clipSequencer.start",
                 args: [
                     "{that}.model",
-                    "{that}.options.clipSequence",
                     "{that}.clock",
                     "{that}.layer",
                     "{that}.preRoller",
@@ -41,12 +41,11 @@
         },
     
         events: {
+            onReady: null,
             onNextClip: null
         },
     
-        loop: false,
-    
-        clipSequence: []
+        loop: false
     });
 
     colin.clipSequencer.swapClips = function (source, preRoller, inTime) {
@@ -92,8 +91,10 @@
     };
 
     // TODO: Ridiculous arg list means ridiculous dependency structure.
-    colin.clipSequencer.start = function (model, sequence, clock, layer, preRoller, onNextClip, loop) {
-        var idx = model.clipIdx = 0;
+    colin.clipSequencer.start = function (model, clock, layer, preRoller, onNextClip, loop) {
+        var idx = model.clipIdx = 0,
+            sequence = model.clipSequence;
+        
         layer.source.element.play();
         colin.clipSequencer.scheduleNextClip(model, sequence, clock, layer, preRoller, onNextClip, loop);
     };
@@ -114,5 +115,37 @@
             colin.clipSequencer.scheduleNextClip(model, sequence, clock, layer, preRoller, onNextClip, loop);
         });
     };
-
+    
+    fluid.defaults("colin.clipSequencer.static", {
+        gradeNames: ["colin.clipSequencer", "autoInit"],
+        
+        listeners: {
+            onCreate: {
+                funcName: "{that}.events.onReady.fire"
+            }
+        }
+    });
+    
+    fluid.defaults("colin.clipSequencer.fcpxml", {
+        gradeNames: ["colin.clipSequencer", "autoInit"],
+        
+        components: {
+            parser: {
+                type: "colin.fcpxmlParser",
+                options: {
+                    listeners: {
+                        afterParsed: [
+                            {
+                                funcName: "{fcpxml}.applier.requestChange",
+                                args: ["clipSequence", "{arguments}.0"]
+                            },
+                            {
+                                funcName: "{fcpxml}.events.onReady.fire"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    });
 }());
