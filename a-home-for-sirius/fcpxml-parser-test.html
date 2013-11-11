@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>FCPXML Parser Test</title>
+        <script src="../third-party/jquery/js/jquery-2.0.0.js"></script>
+        <script src="../third-party/infusion/js/infusion-framework.js"></script>
+        <script src="js/fcpxml-parser.js"></script>
+    </head>
+    
+    <body>
+        <pre id="clipList"></pre>
+        
+        <script>
+            fluid.registerNamespace("colin");
+            
+            colin.clipUrlPrinter = function (clipSequence) {
+                var clipList = jQuery("#clipList");
+                
+                fluid.each(clipSequence, function (clip) {
+                    var isLight = clip.url.indexOf("/light/") > -1,
+                    o = !isLight ? {} : {
+                        values: {
+                            mul: 0.0,
+                            add: 0.0
+                        }
+                    };
+                    clipList.append("\"" + clip.url + "\": " + JSON.stringify(o, null, "    ") + ",\n\n");
+                });
+            };
+            
+            var parser = colin.fcpxmlParser({
+                xmlUrl: "videos/consolidated/a-home-for-sirius-basic-sequences.fcpxml",
+    
+                assetUrlMap: {
+                    base: "videos",
+                    prefix: ""
+                },
+                
+                listeners: {
+                    afterParsed: {
+                        funcName: "colin.clipUrlPrinter",
+                        args: ["{arguments}.0"]
+                    }
+                }
+            });
+        </script>
+    </body>
+</html>

@@ -41,8 +41,15 @@
         },
     
         events: {
+            onSequenceReady: null,
             onReady: null,
             onNextClip: null
+        },
+        
+        listeners: {
+            onSequenceReady: {
+                funcName: "{that}.events.onReady.fire"
+            }
         },
     
         loop: false
@@ -116,12 +123,19 @@
         });
     };
     
+    colin.clipSequencer.mergeClipParams = function (clipSequence, defaultParams) {
+        return fluid.transform(clipSequence, function (clip) {
+            var defaults = defaultParams[clip.url];
+            return $.extend(true, clip, defaults);
+        });
+    };
+    
     fluid.defaults("colin.clipSequencer.static", {
         gradeNames: ["colin.clipSequencer", "autoInit"],
         
         listeners: {
             onCreate: {
-                funcName: "{that}.events.onReady.fire"
+                funcName: "{that}.events.onSequenceReady.fire"
             }
         }
     });
@@ -136,11 +150,8 @@
                     listeners: {
                         afterParsed: [
                             {
-                                funcName: "{fcpxml}.applier.requestChange",
-                                args: ["clipSequence", "{arguments}.0"]
-                            },
-                            {
-                                funcName: "{fcpxml}.events.onReady.fire"
+                                funcName: "{fcpxml}.events.onSequenceReady.fire",
+                                args: ["{arguments}.0"]
                             }
                         ]
                     }
@@ -148,4 +159,67 @@
             }
         }
     });
+    
+    fluid.defaults("colin.clipSequencer.clipMerger", {
+        gradeNames: ["colin.clipSequencer"],
+        
+        listeners: {
+            onSequenceReady: [
+                {
+                    funcName: "{that}.applier.requestChange",
+                    args: ["clipSequence", {
+                        expander: {
+                            funcName: "colin.clipSequencer.mergeClipParams",
+                            args: ["{arguments}.0", "{that}.options.clipParams"]
+                        }
+                    }]
+                },
+                {
+                    funcName: "{that}.events.onReady.fire"
+                }
+            ]
+        }
+    });
+    
+    fluid.defaults("colin.clipSequencer.fcpXmlMerger", {
+        gradeNames: ["colin.clipSequencer.fcpxml", "colin.clipSequencer.clipMerger"],
+        clipParams: colin.siriusHome.clipParameters
+    });
+    
+    fluid.defaults("colin.clipSequencer.filteredSequencer", {
+        gradeNames: ["colin.clipSequencer"],
+        
+        listeners: {
+            onSequenceReady: [
+                {
+                    funcName: "{that}.applier.requestChange",
+                    args: ["clipSequence", {
+                        expander: {
+                            funcName: "fluid.remove_if",
+                            args: ["{arguments}.0", {
+                                expander: {
+                                    funcName: "fluid.getGlobalValue",
+                                    args: ["{that}.options.filterFnName"]
+                                }
+                            }]
+                        }
+                    }]
+                },
+                {
+                    funcName: "{that}.events.onReady.fire"
+                }
+            ]
+        }
+    });
+    
+    fluid.defaults("colin.siriusHome.lightOnlySequencer", {
+        gradeNames: ["colin.clipSequencer.fcpxml", "colin.clipSequencer.filteredSequencer", "autoInit"],
+        
+        filterFnName: "colin.siriusHome.onlyLightFilter"
+    });
+    
+    colin.siriusHome.onlyLightFilter = function (clip) {
+        return clip.url.indexOf("/light/") < 0;
+    };
+    
 }());

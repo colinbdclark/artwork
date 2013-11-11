@@ -75,9 +75,9 @@
                         id: "thresholdSine",
                         ugen: "flock.ugen.sin",
                         phase: 0.7,
-                        freq: 1/360,
-                        mul: 0.0028,
-                        add: 0.0028,
+                        freq: 1/4,
+                        mul: 0.1,
+                        add: 0.1,
                     },
                     
                     fps: 60
@@ -259,7 +259,7 @@
             },
             threshold: {
                 type: "f",
-                value: 0.01
+                value: 0.1
             },
             textureSize: {
                 type: "f",
