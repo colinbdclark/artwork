@@ -143,17 +143,32 @@
     fluid.defaults("colin.clipSequencer.fcpxml", {
         gradeNames: ["colin.clipSequencer", "autoInit"],
         
+        /*
+        
+        prologue: [],
+        
+        epilogue: [],
+        
+        {
+            funcName: "colin.clipSequencer.fcpxml.prepareSequence",
+            args: [
+                "{arguments}.0", 
+                "{fcpxml}.options.prologue", 
+                "{fcpxml}.options.epilogue", 
+                "{fcpxml}.events.onSequenceReady.fire"
+            ]
+        }*/
+        
         components: {
             parser: {
                 type: "colin.fcpxmlParser",
                 options: {
                     listeners: {
-                        afterParsed: [
-                            {
-                                funcName: "{fcpxml}.events.onSequenceReady.fire",
-                                args: ["{arguments}.0"]
-                            }
-                        ]
+                        afterParsed: {
+                            funcName: "{fcpxml}.events.onSequenceReady.fire",
+                            args: ["{arguments}.0"]
+                        },
+                        
                     }
                 }
             }

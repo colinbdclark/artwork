@@ -5,9 +5,13 @@
     
     /*
     TODO:
-     - Add support for fast-forwarding, which requires:
-        - setting the playback rate of both layers
-        - increasing the frequency of the threshold synth
+        - prologue and epilogue for fcpxml-based sequencer
+        - Threshold "breathing" should never fully reach zero
+        - Need to fix bug where first clip is sparkly
+        - sparkle settings for each clip
+        - progressive sparkliness (the sparkle setting needs to be a multiplication factor)
+        - expander for randomly "weaving" sequences together
+        - tighten up clips and speed up the general pacing a bit, especially for light clips
     */
     
     /****************************************
@@ -40,8 +44,8 @@
                 options: {
                     listeners: {
                         onNextClip: {
-                            funcName: "{siriusHome}.thresholdSynth.namedNodes.thresholdSine.set",
-                            args: ["{arguments}.0.values"]
+                            funcName: "colin.siriusHome.updateSynthValues",
+                            args: ["{siriusHome}.thresholdSynth", "{arguments}.0.values"]
                         }
                     }
                 }
@@ -75,9 +79,9 @@
                         id: "thresholdSine",
                         ugen: "flock.ugen.sin",
                         phase: 0.7,
-                        freq: 1/4,
-                        mul: 0.1,
-                        add: 0.1,
+                        freq: 1/3,
+                        mul: 0.01,
+                        add: 0.01,
                     },
                     
                     fps: 60
@@ -193,28 +197,13 @@
         onPlay.fire();
     };
     
-    colin.siriusHome.updateState = function (source, clipSpec, synth) {
-        if (clipSpec.values) {
-            synth.namedNodes.thresholdSine.set(clipSpec.values);
-        }
-        
-        source.setURL(clipSpec.url);
-    };
-    
-    colin.siriusHome.makeVideoUpdater = function (source, clipSpec, synth) {
-        return function () {
-            colin.siriusHome.updateState(source, clipSpec, synth);
+    colin.siriusHome.updateSynthValues = function (synth, values) {
+        var values = values || {
+            mul: synth.options.synthDef.mul,
+            add: synth.options.synthDef.add
         };
-    };
-    
-    colin.siriusHome.nextVideo = function (model, path, sequence, source, synth) {
-        model[path]++;
-        if (model[path] >= sequence.length) {
-            model[path] = 0;
-        }
         
-        var clipSpec = sequence[model[path]];
-        colin.siriusHome.updateState(source, clipSpec, synth);
+        synth.namedNodes.thresholdSine.set(values);
     };
     
     colin.siriusHome.makeStageVertex = function (gl, vertexPosition) {
@@ -259,7 +248,7 @@
             },
             threshold: {
                 type: "f",
-                value: 0.1
+                value: 0.01
             },
             textureSize: {
                 type: "f",

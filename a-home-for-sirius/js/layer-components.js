@@ -27,7 +27,7 @@
     
     fluid.defaults("colin.siriusHome.topSequencer", {
         gradeNames: ["colin.clipSequencer.fcpXmlMerger", "autoInit"],
-    
+        
         components: {
             parser: {
                 options: {
