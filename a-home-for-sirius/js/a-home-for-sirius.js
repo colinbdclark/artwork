@@ -5,6 +5,7 @@
     
     /*
     TODO:
+        - fix cactus bug
         - prologue and epilogue for fcpxml-based sequencer
         - Threshold "breathing" should never fully reach zero
         - Need to fix bug where first clip is sparkly
@@ -77,11 +78,11 @@
                 options: {
                     synthDef: {
                         id: "thresholdSine",
-                        ugen: "flock.ugen.sin",
+                        ugen: "flock.ugen.triOsc",
                         phase: 0.7,
                         freq: 1/3,
                         mul: 0.01,
-                        add: 0.01,
+                        add: 0.015,
                     },
                     
                     fps: 60
